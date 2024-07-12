@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMC - Minha Empresa</title>
+    <style>
+        /* Estilos CSS podem ser adicionados conforme necessário */
+    </style>
+</head>
+<body>
+    <h1>IMC - Minha Empresa</h1>
+
+    <!-- Formulário para cadastrar usuário -->
+    <div id="formUsuario">
+        <h2>Cadastrar Usuário</h2>
+        <form id="formCadastrarUsuario">
+            <label for="nomeUsuario">Nome:</label>
+            <input type="text" id="nomeUsuario" name="nomeUsuario" required>
+            <br><br>
+            <label for="sobrenomeUsuario">Sobrenome:</label>
+            <input type="text" id="sobrenomeUsuario" name="sobrenomeUsuario" required>
+            <br><br>
+            <button type="submit">Cadastrar Usuário</button>
+        </form>
+    </div>
+
+    <!-- Formulário para cadastrar IMC -->
+    <div id="formImc">
+        <h2>Cadastrar IMC</h2>
+        <form id="formCadastrarImc">
+            <label for="alunoId">ID do Aluno:</label>
+            <input type="number" id="alunoId" name="alunoId" required>
+            <br><br>
+            <label for="peso">Peso (kg):</label>
+            <input type="number" id="peso" name="peso" step="0.1" required>
+            <br><br>
+            <label for="altura">Altura (m):</label>
+            <input type="number" id="altura" name="altura" step="0.01" required>
+            <br><br>
+            <button type="submit">Cadastrar IMC</button>
+        </form>
+    </div>
+
+    <!-- Lista de IMCs -->
+    <div id="listaImcs">
+        <h2>Lista de IMCs</h2>
+        <ul id="lista">
+            <!-- Os IMCs serão listados aqui -->
+        </ul>
+    </div>
+
+    <!-- Formulário para listar IMCs por aluno -->
+    <div id="formListarImcPorAluno">
+        <h2>Listar IMCs por Aluno</h2>
+        <form id="formListarImc">
+            <label for="alunoIdListar">ID do Aluno:</label>
+            <input type="number" id="alunoIdListar" name="alunoIdListar" required>
+            <br><br>
+            <button type="submit">Listar IMCs por Aluno</button>
+        </form>
+        <div id="imcsPorAluno">
+            <!-- Os IMCs do aluno serão listados aqui -->
+        </div>
+    </div>
+
+    <!--Formulário para alterar IMC -->
+    <div id="formAlterarImc">
+        <h2>Alterar IMC</h2>
+        <form id="formAlterar">
+            <label for="imcId">ID do IMC:</label>
+            <input type="number" id="imcId" name="imcId" required>
+            <br><br>
+            <label for="novoPeso">Novo Peso (kg):</label>
+            <input type="number" id="novoPeso" name="novoPeso" step="0.1" required>
+            <br><br>
+            <label for="novaAltura">Nova Altura (m):</label>
+            <input type="number" id="novaAltura" name="novaAltura" step="0.01" required>
+            <br><br>
+            <button type="submit">Alterar IMC</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const formCadastrarUsuario = document.getElementById('formCadastrarUsuario');
+    const formCadastrarImc = document.getElementById('formCadastrarImc');
+    const formListarImc = document.getElementById('formListarImc');
+    const formAlterar = document.getElementById('formAlterar');
+    const lista = document.getElementById('lista');
+    const imcsPorAluno = document.getElementById('imcsPorAluno');
+
+    formCadastrarUsuario.addEventListener('submit', cadastrarUsuario);
+    formCadastrarImc.addEventListener('submit', cadastrarImc);
+    formListarImc.addEventListener('submit', listarImcsPorAluno);
+    formAlterar.addEventListener('submit', alterarImc);
+
+    async function cadastrarUsuario(event) {
+        event.preventDefault();
+        const nome = document.getElementById('nomeUsuario').value;
+        const sobrenome = document.getElementById('sobrenomeUsuario').value;
+
+        try {
+            const response = await fetch('http://localhost:5232/api/usuario/cadastrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, sobrenome })
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao cadastrar usuário');
+            }
+
+            alert('Usuário cadastrado com sucesso!');
+            formCadastrarUsuario.reset();
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao cadastrar usuário. Verifique os dados e tente novamente.');
+        }
+    }
+
+    async function cadastrarImc(event) {
+        event.preventDefault();
+        const alunoId = parseInt(document.getElementById('alunoId').value);
+        const peso = parseFloat(document.getElementById('peso').value);
+        const altura = parseFloat(document.getElementById('altura').value);
+
+        try {
+            const response = await fetch('http://localhost:5232/api/imc/cadastrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ alunoId, peso, altura })
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao cadastrar IMC');
+            }
+
+            alert('IMC cadastrado com sucesso!');
+            formCadastrarImc.reset();
+            carregarImcs();
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao cadastrar IMC. Verifique os dados e tente novamente.');
+        }
+    }
+
+    async function listarImcsPorAluno(event) {
+        event.preventDefault();
+        const alunoId = parseInt(document.getElementById('alunoIdListar').value);
+
+        try {
+            const response = await fetch(`http://localhost:5232/api/imc/listarporaluno/${alunoId}`);
+
+            if (!response.ok) {
+                throw new Error('Erro ao obter IMCs do aluno');
+            }
+
+            const data = await response.json();
+            imcsPorAluno.innerHTML = data.length === 0 ? '<p>Nenhum IMC encontrado para este aluno.</p>' :
+                data.map(imc => `<li>ID: ${imc.id}, Peso: ${imc.peso}, Altura: ${imc.altura}, Valor: ${imc.valor}</li>`).join('');
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao obter IMCs do aluno. Tente novamente mais tarde.');
+        }
+    }
+
+    async function alterarImc(event) {
+        event.preventDefault();
+        const imcId = parseInt(document.getElementById('imcId').value);
+        const peso = parseFloat(document.getElementById('novoPeso').value);
+        const altura = parseFloat(document.getElementById('novaAltura').value);
+
+        try {
+            const response = await fetch(`http://localhost:5232/api/imc/alterar/${imcId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ peso, altura })
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao alterar IMC');
+            }
+
+            alert('IMC alterado com sucesso!');
+            formAlterar.reset();
+            carregarImcs();
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao alterar IMC. Verifique os dados e tente novamente.');
+        }
+    }
+
+    async function carregarImcs() {
+        try {
+            const response = await fetch('http://localhost:5232/api/imc/listar');
+
+            if (!response.ok) {
+                throw new Error('Erro ao obter lista de IMCs');
+            }
+
+            const data = await response.json();
+            lista.innerHTML = data.length === 0 ? '<p>Nenhum IMC cadastrado.</p>' :
+                data.map(imc => `<li>ID: ${imc.id}, Peso: ${imc.peso}, Altura: ${imc.altura}, Valor: ${imc.valor}`).join('');
+
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao obter lista de IMCs. Tente novamente mais tarde.');
+        }
+    }
+
+    carregarImcs();
+});
+
+    </script>
+</body>
+</html>
